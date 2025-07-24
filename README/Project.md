@@ -15,7 +15,7 @@ también se podrá personalizar el color de letra y fondo, entre otras caracter�
 
 * Automatización en la generación del Display según la organización y número de menús requeridos.
 * Sistema que organice los menús en el display de manera simple y personalizada
-* Sistema que permita cambiar el que menú se está controlando.
+* Sistema que permita cambiar que menú se está controlando.
 * Sistema de automatización que genere las opciones de los menús.
 * Opciones con cursor y retroalimentación para el usuario.
 * Menús que tengan filas, columnas y páginas.
