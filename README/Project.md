@@ -1,7 +1,7 @@
 # Project Overview
 
-ASCII_Menus es una herramienta sencilla que ofrece la creación de distintos menus interactivos, <br>
-en los que se puede personalizar algunas de sus características e incorporándolos a un display <br>
+ASCII_Menus es una librería sencilla que ofrece la creación de distintos menus interactivos, <br>
+en los que se puede personalizar algunas de sus características e incorporarlos a un display <br>
 visible en cualquier terminal.
 
 ## Características
@@ -14,8 +14,8 @@ también se podrá personalizar el color de letra y fondo, entre otras caracter�
 ## Características clave
 
 * Automatización en la generación del Display según la organización y número de menús requeridos.
-* Sistema que organice los menús en el display de manera simple y personalizada
-* Sistema que permita cambiar que menú se está controlando.
+* Sistema que organice los menús en el display de manera simple y personalizada.
+* Sistema que permita la Activación/Desactivación en la interacción con los menús.
 * Sistema de automatización que genere las opciones de los menús.
 * Opciones con cursor y retroalimentación para el usuario.
 * Menús que tengan filas, columnas y páginas.
