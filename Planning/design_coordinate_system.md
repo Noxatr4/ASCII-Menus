@@ -52,7 +52,7 @@
                          Ej: Agarrando la idea vista en [Límites de páginas y verticales](#Requerimientos), tenemos dos coord. que se relacionan. <br>
                          El funcinamiento es parecido al sistema numérico decimal (Decimal: `[Decenas, Unidades]`, Notación posicional: `[Z, Y]`). <br>
                          Por tanto, Se tendría:
-    1. `if Y supera Límite: Y += 1 o Y -= 1` dependiendo del caso.
+    1. `if Y supera Límite: Z += 1 o Z -= 1` dependiendo del caso.
     2. `Y % Límite de Y`.
     3. `Z % Límite de Z`.
 
@@ -77,7 +77,54 @@
 
 
 #### Diagrama de Flujo
+<img src="/Planning/img/diagrama_coordinate_system.png" alt="Diagrama de Flujo Sistema de coord." width="720" height="750">
 
 
 
 ### Pseudo Código
+
+Nombre de variables
+```
+input_user: Entrada de usuario
+last_coord: Coordenadas anteriores, [M, Z, Y, X]
+limit_coord: Limite de las coordenadas, [LtM, LtZ, LtY, LtX]
+new_coord: Salida de las coordenadas, [NwM, NwZ, NwY, NwX]
+
+coord_add: El valor de coord. que se sumará a after_coord, (AdM, AdZ, AdY, AdX)
+```
+
+Comprobación de entrada válida y proceso de generar un valor a sumar con `last_coord` 
+```
+if input_user == Q
+    coord_add = (1, 0, 0, 0)
+elif input_user == W
+    coord_add = (0, 0, 1, 0)
+elif input_user == S
+    coord_add = (0, 0, -1, 0)
+elif input_user == A
+    coord_add = (0, 0, 0, -1)
+elif input_user == D
+    coord_add = (0, 0, 0, 1)
+else 
+    coord_add = last_coord
+```
+
+Suma
+```
+for i; len(last_coord)
+    new_coord[i] = last_coord[i] + coord_add[i]
+```
+
+Forzar que la salida de coord. siempre este dentro de los límites presentes en `limit_coord`
+```
+NwM = M % LtM 
+NwX = X % LtX
+    
+If Y < 0 or Y >= LtY
+    NwZ += AdY
+NwY = Y % LtY 
+NwZ = Z % LtZ
+```
+
+Salida <br>
+`new_coord`
