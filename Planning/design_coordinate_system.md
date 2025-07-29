@@ -66,8 +66,18 @@
 
 ### Esquemático
 
-#### Input/Output
+#### Formato de Input/Output
+
+* **Input:**
+  * user: `q, w, a, s, d`
+  * last coord: `[M, Z, Y, X]`
+  * coord. limit: `[M, Z, Y, X]`
+*  **Output:**
+  * new coord: `[M, Z, Y, X]`
+
 
 #### Diagrama de Flujo
+
+
 
 ### Pseudo Código
