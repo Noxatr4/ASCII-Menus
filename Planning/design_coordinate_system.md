@@ -57,6 +57,9 @@
     3. `Z % Límite de Z`.
 
 ### Segmentación
+1. Convertidor de input `alfabético → numérico`.
+2. Sumatoria o Resta y tratamiento de los límites de coord.
+3. Generación de una lista con todas las coord. actualizadas. 
 
 
 ## Pre-Coding
