@@ -13,6 +13,8 @@ DEFAULT_CHARACTERS = {
     "ScrollBarValues": ("\x1b[48;5;0m\x1b[0m ", "\x1b[48;5;255m \x1b[0m")
 }
 
+OK_BUTTON = "E"
+
 TEST_LIST = ["aaaaaaaaaaaaaaaa", "a", "b", "c", "d", "f", "g", "h", "i", "j", "k", "l", "m", "n", "ñ", "o", "p", "q", "r"]
 
 class Menu:
@@ -79,58 +81,69 @@ class Menu:
 
         return options_list_processed
 
+
 # Funciones de construcción de menú
-    def menu_limit_row_crafter(self):
-        return (DEFAULT_CHARACTERS["MenuCorner"] +
-                DEFAULT_CHARACTERS["MenuLimitRowBody"] * self.character_per_column +
-                DEFAULT_CHARACTERS["MenuCorner"])
+    def menu_crafter(self, mode="solo"):
+        def mode_menu_crafter(input_row: str):
+            if mode == "solo":
+                print(input_row)
+            elif mode == "display":
+                menu_list.append(input_row)
+            else:
+                print("ERROR: En la función menu_crafter; Modo no válido")
+        def menu_limit_row_crafter():
+            return (DEFAULT_CHARACTERS["MenuCorner"] +
+                    DEFAULT_CHARACTERS["MenuLimitRowBody"] * self.character_per_column +
+                    DEFAULT_CHARACTERS["MenuCorner"])
+        def separator_row_crafter():
+            return (DEFAULT_CHARACTERS["RowLimit"] +
+                    DEFAULT_CHARACTERS["MenuLimitRowBody"] * self.character_per_column +
+                    DEFAULT_CHARACTERS["RowLimit"])
+        def empty_row_crafter():
+            return (DEFAULT_CHARACTERS["RowLimit"] +
+                    DEFAULT_CHARACTERS["BodyEmptyRow"] * (self.character_per_column - 1) +
+                    DEFAULT_CHARACTERS["ScrollBarValues"][True] +
+                    DEFAULT_CHARACTERS["RowLimit"])
+        def title_row_crafter():
+            return (DEFAULT_CHARACTERS["RowLimit"] +
+                    self.title_menu.center(self.character_per_column) +
+                    DEFAULT_CHARACTERS["RowLimit"])
 
 
-    def separator_row_crafter(self):
-        return (DEFAULT_CHARACTERS["RowLimit"] +
-                DEFAULT_CHARACTERS["MenuLimitRowBody"] * self.character_per_column +
-                DEFAULT_CHARACTERS["RowLimit"])
-
-
-    def empty_row_crafter(self):
-        return (DEFAULT_CHARACTERS["RowLimit"] +
-                DEFAULT_CHARACTERS["BodyEmptyRow"] * (self.character_per_column - 1) +
-                DEFAULT_CHARACTERS["ScrollBarValues"][True] +
-                DEFAULT_CHARACTERS["RowLimit"])
-
-
-    def title_row_crafter(self):
-        return (DEFAULT_CHARACTERS["RowLimit"] +
-                self.title_menu.center(self.character_per_column) +
-                DEFAULT_CHARACTERS["RowLimit"])
-
-
-    def menu_crafter(self, mode="string"):
+        menu_list = []
         coord_page = self.cursor_coordinates[0]
         coord_row = self.cursor_coordinates[1]
-        coord_column = self.cursor_coordinates[2]
 
         for n in range(5):
             if n == 1:
-                print(self.title_row_crafter())
+                mode_menu_crafter(title_row_crafter())
             elif n == 2:
-                print(self.separator_row_crafter())
+                mode_menu_crafter(separator_row_crafter())
             elif n == 3:
                 for row in range(self.rows_per_page):
                     show_list_options = self.options_list[coord_page][row].copy()
 
-                    print(self.empty_row_crafter())
+                    mode_menu_crafter(empty_row_crafter())
                     if self.activated and self.type_menu and row == coord_row:
                         show_list_options[self.column_object_index(mode="cursor")] = CURSOR_VALUES[True]
 
-                    print("".join(show_list_options))
+                    mode_menu_crafter("".join(show_list_options))
 
             else:
-                print(self.menu_limit_row_crafter())
+                mode_menu_crafter(menu_limit_row_crafter())
+
+        if mode == "solo":
+            return None
+        elif mode == "display":
+            return menu_list
+        else:
+            return print("ERROR: En la función menu_crafter; Modo no válido")
 
 
-    def change_coordinate_cursor(self, input_user):
-        self.cursor_coordinates = Coordinate_System.coordinate_system(input_user, self.cursor_coordinates, [self.number_pages, self.rows_per_page, self.option_per_column])
+    def change_coordinate_cursor(self, input_user: str):
+        self.cursor_coordinates = Coordinate_System.coordinate_system(input_user, self.cursor_coordinates,
+                                                                      [self.number_pages, self.rows_per_page,
+                                                                       self.option_per_column])
 
 
     def column_object_index(self, mode="option"):
@@ -141,6 +154,11 @@ class Menu:
             case _: return -1
 
 
+    def select_option(self):
+        coord_page = self.cursor_coordinates[0]
+        coord_row = self.cursor_coordinates[1]
+        return self.cursor_coordinates, self.options_list[coord_page][coord_row][self.column_object_index()]
+
 
 def main():
     test_menu = Menu("Test", 3, 4, 15, TEST_LIST)
@@ -149,6 +167,7 @@ def main():
         input_user_refresh = input("...")
         test_menu.change_coordinate_cursor(input_user_refresh)
         test_menu.menu_crafter()
+        print(test_menu.select_option())
 
     #menu = test_menu.options_list_processing(TEST_LIST)
     #test_menu.menu_crafter()
