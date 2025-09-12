@@ -13,7 +13,7 @@ def main():
 
     while True:
         system("cls")
-        pprint(test_menu.menu_crafter(mode="display"))
+        pprint(test_menu.menu_crafter())
         test_menu.change_coordinate_cursor(input("..."))
 
 
