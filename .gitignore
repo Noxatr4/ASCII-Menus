@@ -1,3 +1,6 @@
 .idea/
 ASCII_Menus/__pycache__/
 Planning/
+ASCII_Menus.egg-info/
+tests/__pycache__/
+build/
