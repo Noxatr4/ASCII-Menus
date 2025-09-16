@@ -27,7 +27,7 @@ Example:
     |   test    :       menu  |
     +-------------------------+
 """
-
+from math import ceil
 
 DEFAULT_CHARACTERS = {
     "cursor_values": ("   ", " > "),
@@ -72,8 +72,6 @@ class Menu:
                               Cutoff point of an option exceeds the maximum char number.
         _options_list : list[str]
                        Post-processed list of an input list.
-
-
     """
 
 
@@ -104,9 +102,14 @@ class Menu:
             def check_width_options(str_option):
                 size_option = len(str_option)
                 if size_option <= self._character_per_option:
-                    return str_option + DEFAULT_CHARACTERS["SpaceCharacter"]* (self._character_per_option - size_option)
+                    return (str_option
+                            + " "
+                            + DEFAULT_CHARACTERS["SpaceCharacter"]
+                            * (self._character_per_option - size_option))
                 else:
-                    return str_option[:self._option_cutoff_point] + DEFAULT_CHARACTERS["CharacterOverflow"]
+                    return (str_option[:self._option_cutoff_point]
+                            + DEFAULT_CHARACTERS["CharacterOverflow"]
+                            + " ")
 
 
             list_size = len(input_options_list)
@@ -150,6 +153,17 @@ class Menu:
 
             return create_pages
 
+
+        # Verifications
+        assert option_per_column > 0, "option_per_column must be greater than 0"
+        assert rows_per_page > 0, "rows_per_page must be greater than 0"
+        assert character_per_option > len(DEFAULT_CHARACTERS["CharacterOverflow"]), (
+            "character_per_option must be greater than {}"
+            .format(len(DEFAULT_CHARACTERS["CharacterOverflow"])))
+
+        assert options_list != [], "The list cannot be empty"
+
+
         # Menu main features
         self._type_menu = dynamic_static_menu
         self.activated: bool = True
@@ -160,13 +174,14 @@ class Menu:
         self._option_per_column = option_per_column
         self._options_rows_per_page = rows_per_page
         self._character_per_option = character_per_option
-        self._number_pages = (int(len(options_list)
+        self._number_pages = ceil((len(options_list)
                                   / (option_per_column * rows_per_page))
-                              + 1)
+                                 )
         self._max_index = option_per_column * rows_per_page * self._number_pages
         self._characters_per_row = (len(DEFAULT_CHARACTERS["cursor_values"][False])
                                     * option_per_column
-                                    + character_per_option * option_per_column
+                                    + (character_per_option + 1)
+                                    * option_per_column
                                     + 1)
         self._option_cutoff_point = (character_per_option
                                      - len(DEFAULT_CHARACTERS["CharacterOverflow"]))
@@ -383,5 +398,4 @@ class Menu:
         coord_page = self._cursor_coordinates[0]
         coord_row = self._cursor_coordinates[1]
         return self._cursor_coordinates, self._options_list[coord_page][coord_row][self._column_object_index()]
-
 
