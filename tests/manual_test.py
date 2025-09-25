@@ -12,10 +12,13 @@ print(TEST_LIST)
 def main():
     test_menu = Menu("test_menu", 1, 5, 5, TEST_LIST)
 
-    while True:
+    test_menu.menu_crafter()
+    pprint(test_menu.menu_crafter(mode="display"))
+
+    """while True:
         system("cls")
         pprint(test_menu.menu_crafter())
-        test_menu.change_coordinate_cursor(input("..."))
+        test_menu.change_coordinate_cursor(input("..."))"""
 
 
 
