@@ -1,7 +1,7 @@
 import math
 import string
 import unittest
-from ASCII_Menus import Menu, DEFAULT_CHARACTERS
+from src.ASCII_Menus import Menu, DEFAULT_CHARACTERS
 import random
 
 TEST_MENU = Menu("test_menu", 3, 4, 4,

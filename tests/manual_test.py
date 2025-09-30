@@ -2,7 +2,7 @@ import string
 from os import system
 from pprint import pprint
 
-from ASCII_Menus import Menu
+from src.ASCII_Menus import Menu
 
 TEST_LIST = []
 TEST_LIST.extend(string.ascii_lowercase)
