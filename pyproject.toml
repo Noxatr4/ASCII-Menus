@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=80.9.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ASCII-Menus"
+version = "0.0.0"
+description = "A simple library for creating different interactive menus"
+readme = "README.md"
+authors = [{ name = "Noxatra", email = "noxatr4@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "LicenseRef-MIT",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["Termial", "Interactive_Menus", "Menus"]
+dependencies = ["math"]
+requires-python = ">=3.13"
+
+
+[project.urls]
+Homepage = "https://github.com/Noxatr4/ASCII-Menus"
