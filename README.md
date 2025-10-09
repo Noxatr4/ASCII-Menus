@@ -110,7 +110,7 @@ SELECT_KEY = "q"
 TEST_OPTION = "test"
 
 def options_test():
-    pass
+    ...
 
 def main():
     while True:
