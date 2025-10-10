@@ -238,6 +238,7 @@ class Menu:
         self._option_cutoff_point = (character_per_option
                                      - len(DEFAULT_CHARACTERS["CharacterOverflow"]))
         self._options_list = _options_list_processing(options_list)
+        self.__setitem__(self._cursor_coordinates + [0], DEFAULT_CHARACTERS["cursor_values"][True])
         set_scroll_bar()
 
 
@@ -263,7 +264,7 @@ class Menu:
             self._options_list[page][row][col] = value
 
         else:
-            raise ValueError("Iterable size 3 - 4")
+            raise ValueError("Iterable size 3 - 4: {}, {}".format(size_item, key))
 
 
     def __getitem__(self, item: tuple | list):
@@ -321,6 +322,8 @@ class Menu:
              input_user : str
         """
 
+        after_coord = self._cursor_coordinates.copy()
+
         limit_coord = [self._number_pages,
                        self._options_rows_per_page,
                        self._option_per_column]
@@ -342,18 +345,25 @@ class Menu:
             return
 
         # sum the last coord
-        self._cursor_coordinates = list(
-            map(lambda x, y: x + y, self._cursor_coordinates, add_coord)
+        last_coord = list(
+            map(lambda x, y: x + y, after_coord, add_coord)
         )
 
         # Refactor with the coord limit
-        self._cursor_coordinates[coord_x] %= limit_coord[coord_x]
+        last_coord[coord_x] %= limit_coord[coord_x]
 
-        if self._cursor_coordinates[coord_y] < 0 or self._cursor_coordinates[coord_y] >= limit_coord[coord_y]:
-            self._cursor_coordinates[coord_z] += add_coord[coord_y]
+        if last_coord[coord_y] < 0 or last_coord[coord_y] >= limit_coord[coord_y]:
+            last_coord[coord_z] += add_coord[coord_y]
 
-        self._cursor_coordinates[coord_y] %= limit_coord[coord_y]
-        self._cursor_coordinates[coord_z] %= limit_coord[coord_z]
+        last_coord[coord_y] %= limit_coord[coord_y]
+        last_coord[coord_z] %= limit_coord[coord_z]
+
+
+        # Change menu values
+        self._cursor_coordinates = last_coord
+
+        self.__setitem__(after_coord + [0], DEFAULT_CHARACTERS["cursor_values"][False])
+        self.__setitem__(last_coord + [0], DEFAULT_CHARACTERS["cursor_values"][True])
 
 
     def select_option(self):
