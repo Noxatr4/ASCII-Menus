@@ -18,7 +18,7 @@ def main():
 
 
     while True:
-        test_menu.change_coordinate_cursor(input("..."))
+        test_menu.control_menu(input("..."))
         test_menu.show_frame_menu()
 
 

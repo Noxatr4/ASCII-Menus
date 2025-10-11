@@ -56,7 +56,7 @@ test_menu.menu_crafter()
 
 ```python
 ...
-test_menu.change_coordinate_cursor("s")
+test_menu
 test_menu.menu_crafter()
 ```
 ```
@@ -126,7 +126,7 @@ def main():
         
         # Show menu and update cursor coordinates.
         TEST_MENU.menu_crafter()
-        TEST_MENU.change_coordinate_cursor(input_user)
+        TEST_MENU.control_menu(input_user)
         
 
 if __name__ == "__main__":
