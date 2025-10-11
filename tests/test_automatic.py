@@ -152,7 +152,6 @@ class TestMenu(unittest.TestCase):
 
 
             first_coord = TEST_MENU._cursor_coordinates
-            TEST_MENU.change_coordinate_cursor(input_user)
             last_coord = TEST_MENU._cursor_coordinates
 
 

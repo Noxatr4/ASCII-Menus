@@ -13,7 +13,7 @@ Example:
     ...                      "test", ":", "menu",
     ...                      "test", ":", "menu",
     ...                  ])
-    >>> test_menu.menu_crafter()
+    >>> test_menu.show_frame_menu()
     +-------------------------+
     |        test_menu        |
     |-------------------------|
@@ -37,11 +37,12 @@ DEFAULT_CHARACTERS = {
     "MenuCorner": "+",
     "CharacterOverflow": "...",
     "SpaceCharacter": " ",
-    "ScrollBarValues": ("\x1b[48;5;0m\x1b[0m ", "\x1b[48;5;255m \x1b[0m")
+    "ScrollBarValues": ("\x1b[48;5;0m \x1b[0m", "\x1b[48;5;255m \x1b[0m")
 }
 
 
 # HotKeys
+OK_BUTTON = "Q"
 MOVE_UP = "W"
 MOVE_DOWN = "S"
 MOVE_LEFT = "A"
@@ -90,69 +91,6 @@ class Menu:
                            List with all the options in str format for the menu.
             dynamic_static_menu : bool, default=True
         """
-        def _options_list_processing(input_options_list: list[str]):
-            """
-            Process the ``input_options_list``, so that useful in class
-
-            This adds empty options to the input list for complete the menu,
-            adjusts the char width of the options
-            and changes the indexing of the list to fit the coordinate system this class.
-            """
-
-            def check_width_options(str_option):
-                size_option = len(str_option)
-                if size_option <= self._character_per_option:
-                    return (str_option
-                            + " "
-                            + DEFAULT_CHARACTERS["SpaceCharacter"]
-                            * (self._character_per_option - size_option))
-                else:
-                    return (str_option[:self._option_cutoff_point]
-                            + DEFAULT_CHARACTERS["CharacterOverflow"]
-                            + " ")
-
-
-            list_size = len(input_options_list)
-            # Fill the entire menu with options.
-            adjust_list_options = input_options_list + [""] * (self._max_index - list_size)
-
-            # Create columns
-            options_list_processed = []
-            for option in adjust_list_options:
-                # Add cursor
-                options_list_processed.append(DEFAULT_CHARACTERS["cursor_values"][False])
-                # Adjust the width of the options.
-                options_list_processed.append(check_width_options(option))
-
-
-            # Structural change of list to approach the coord system.
-            # Create rows
-            create_rows = []
-            for i in range(0, len(options_list_processed), self._option_per_column * 2):
-                # Add Row Options
-                row_list = options_list_processed[i : i + self._option_per_column * 2]
-                # Add BorderRow
-                row_list.insert(0, DEFAULT_CHARACTERS["RowLimit"])
-                # Add ScrollBar
-                row_list.append(DEFAULT_CHARACTERS["ScrollBarValues"][True])
-                # Add BorderRow
-                row_list.append(DEFAULT_CHARACTERS["RowLimit"])
-                # Row
-                create_rows.append(row_list)
-
-            # Add Rows to Menu
-            options_list_processed = create_rows.copy()
-
-            del adjust_list_options, list_size, create_rows, row_list, i
-
-
-            # Create Pages
-            create_pages = []
-            for i in range(0, len(options_list_processed), self._options_rows_per_page):
-                create_pages.append(options_list_processed[i : i + self._options_rows_per_page])
-
-            return create_pages
-
 
         # Verifications
         assert option_per_column > 0, "option_per_column must be greater than 0"
@@ -170,6 +108,16 @@ class Menu:
         self._title_menu = title_menu
         self._cursor_coordinates: list[int] = [0, 0, 0]
 
+        # Set default character
+        self.cursor = DEFAULT_CHARACTERS["cursor_values"]
+        self.scrollbar = DEFAULT_CHARACTERS["ScrollBarValues"]
+        self.body_empty_row = DEFAULT_CHARACTERS["BodyEmptyRow"]
+        self.row_limit = DEFAULT_CHARACTERS["RowLimit"]
+        self.menu_limit_body = DEFAULT_CHARACTERS["MenuLimitRowBody"]
+        self.menu_corner = DEFAULT_CHARACTERS["MenuCorner"]
+        self.character_overflow = DEFAULT_CHARACTERS["CharacterOverflow"]
+        self.space_character = DEFAULT_CHARACTERS["SpaceCharacter"]
+
         # Menu structure
         self._option_per_column = option_per_column
         self._options_rows_per_page = rows_per_page
@@ -178,151 +126,228 @@ class Menu:
                                   / (option_per_column * rows_per_page))
                                  )
         self._max_index = option_per_column * rows_per_page * self._number_pages
-        self._characters_per_row = (len(DEFAULT_CHARACTERS["cursor_values"][False])
+        self._characters_per_row = (len(self.cursor[False])
                                     * option_per_column
                                     + (character_per_option + 1)
                                     * option_per_column
                                     + 1)
         self._option_cutoff_point = (character_per_option
-                                     - len(DEFAULT_CHARACTERS["CharacterOverflow"]))
-        self._options_list: list = _options_list_processing(options_list)
+                                     - len(self.character_overflow))
 
 
-    def menu_crafter(self, mode: str = "solo"):
-        """
-        Generate `Frame Menu`.
-
-        Parameters:
-            mode: str
-                  You want a return in list or None with print in terminal.
-        Return:
-            list | None
-                It depends on the value of ``mode``.
-
-        Examples:
-            - ``mode="solo"``: Return None; Print in terminal.
-            - ``mode="display"``: Return list with menu rows.
-
-        """
-
-        def _mode_menu_generate(input_row: str | tuple[str, ...]):
-            """It generate output dependent to you  select mode"""
-
-            if mode == "solo":
-                print(input_row)
-            elif mode == "display":
-                menu_list.append(input_row)
-            else:
-                pass
-
-        def _set_scrollbar():
-            """Create groups of rows that represent the pages for the scrollbar"""
-
-            scrollbar_groups = []
-            # How many options rows represents each page? (Total Rows / Total Page)
-            # Total Rows = "options rows" + "spaces row"
-            # As each type of row is interleaved, the result can be obtained
-            # Total Rows = "options rows" * 2
-            # rows_group is the size complete group
-            # module is the surplus
-            rows_group = int(self._options_rows_per_page * 2 / self._number_pages)
-            module = self._options_rows_per_page * 2 % self._number_pages
-
-            # Obtain the size of the rows groups by adding the surplus
-            n_rows_groups = [rows_group + 1 if page < module else rows_group
-                          for page in range(self._number_pages)]
-
-            # Assign the index of the rows that corresponds to each group
-            ii = 0
-            for page in range(self._number_pages):
-                scrollbar_groups.append([])
-                for n_rows in range(n_rows_groups[page]):
-                    scrollbar_groups[page].append(ii)
-                    ii += 1
-
-            return scrollbar_groups
-
-        def _create_row(type_row: str, index_options_row: int = 0):
-            """Generate a standard row type"""
-
-            match type_row:
-                case "limit":
-                    return (DEFAULT_CHARACTERS["MenuCorner"]
-                            + DEFAULT_CHARACTERS["MenuLimitRowBody"] * self._characters_per_row
-                            + DEFAULT_CHARACTERS["MenuCorner"])
-                case "separator":
-                    return (DEFAULT_CHARACTERS["RowLimit"]
-                            + DEFAULT_CHARACTERS["MenuLimitRowBody"] * self._characters_per_row
-                            + DEFAULT_CHARACTERS["RowLimit"])
-                case "title":
-                    return (DEFAULT_CHARACTERS["RowLimit"]
-                            +self._title_menu.center(self._characters_per_row)
-                            +DEFAULT_CHARACTERS["RowLimit"])
-                case "options":
-                    odd = index_options_row % 2
-
-                    # If you are in the row that corresponds to the active page of the scroll-bar
-                    scrollbar_value = True if index_options_row in active_scrollbar else False
-
-                    if odd:
-                        # Obtain the option row you need
-                        row = int(  (index_options_row - 1) / 2  )
-                        show_list_options = self._options_list[coord_page][row].copy()
-
-                        # Set the Scroll-Bar value
-                        show_list_options[self._column_object_index(mode="ScrollBar")] = \
-                            DEFAULT_CHARACTERS["ScrollBarValues"][scrollbar_value]
-
-                        # Set the cursor Value
-                        if self.activated and self._type_menu and row == coord_row:
-                            show_list_options[self._column_object_index(mode="cursor")] = \
-                                DEFAULT_CHARACTERS["cursor_values"][True]
-
-                        return "".join(show_list_options)
-
-                    else:
-                        return (DEFAULT_CHARACTERS["RowLimit"]
-                                + DEFAULT_CHARACTERS["BodyEmptyRow"] * (self._characters_per_row - 1)
-                                + DEFAULT_CHARACTERS["ScrollBarValues"][scrollbar_value]
-                                + DEFAULT_CHARACTERS["RowLimit"])
-
-                case _:
-                    raise ValueError("Invalid type row")
+        # Set default menu rows
+        self.title_row = (self.row_limit
+                          + self._title_menu.center(self._characters_per_row)
+                          + self.row_limit)
+        self.separate_row = (self.row_limit
+                             + self.menu_limit_body * self._characters_per_row
+                             + self.row_limit)
+        self.limit_menu = (self.menu_corner
+                           + self.menu_limit_body * self._characters_per_row
+                           + self.menu_corner)
+        self.empty_row = [
+            self.row_limit,
+            self.body_empty_row * (self._characters_per_row - 1),
+            self.scrollbar[False],
+            self.row_limit
+        ]
 
 
-        steps_to_create_menu = 5
-        menu_list = []
-        coord_page = self._cursor_coordinates[0]
-        coord_row = self._cursor_coordinates[1]
+        # Generate menu
+        self._options_list = self._options_list_processing(options_list)
+        self.__setitem__(self._cursor_coordinates + [0], self.cursor[True])
+        self._set_scroll_bar()
 
-        # Generate menu parts
-        for n in range(steps_to_create_menu):
-            if n == 1:
-                title = _create_row("title")
-                _mode_menu_generate(title)
-            elif n == 2:
-                separator_row = _create_row("separator")
-                _mode_menu_generate(separator_row)
-            elif n == 3:
-                active_scrollbar = _set_scrollbar()[coord_page]
-                for c in range(self._options_rows_per_page * 2):
-                    options_row = _create_row("options", index_options_row=c)
-                    _mode_menu_generate(options_row)
 
-            else:
-                limit_row = _create_row("limit")
-                _mode_menu_generate(limit_row)
+    def __setitem__(self, key, value):
+        size_item = len(key)
+        if size_item == 4:
+            assert key[0] < self._number_pages
+            assert key[1] < self._options_rows_per_page
+            assert key[2] < self._option_per_column
+            page = key[0] + 3
+            row = key[1] * 2 + 1
+            col = key[2] + 1
+            cursor_stroption = key[3]
+            self._options_list[page][row][col][cursor_stroption] = value
 
-        # Generate Returns
-        if mode == "solo":
-            return None
-        elif mode == "display":
-            return menu_list
+        elif size_item == 3:
+            assert key[0] < self._number_pages
+            assert key[1] < self._options_rows_per_page * 2 + 1
+            assert key[2] < self._option_per_column
+            page = key[0] + 3
+            row = key[1]
+            col = len(self._options_list[page][row]) - 2
+            self._options_list[page][row][col] = value
+
         else:
-            raise ValueError("Invalid mode")
+            raise ValueError("Iterable size 3 - 4: {}, {}".format(size_item, key))
 
 
-    def change_coordinate_cursor(self, input_user: str):
+    def __getitem__(self, item: tuple | list):
+        size_item = len(item)
+
+        # Get Option (if item[2] == 1) or cursor (if item[2] == 0) value
+        if size_item == 4:
+            assert item[0] < self._number_pages
+            assert item[1] < self._options_rows_per_page
+            assert item[2] < self._option_per_column
+            page = item[0] + 3
+            row = item[1] * 2 + 1
+            col = item[2] + 1
+            cursor_stroption = item[3]
+            return self._options_list[page][row][col][cursor_stroption]
+
+        elif size_item == 3:
+            assert item[0] < self._number_pages
+            assert item[1] < self._options_rows_per_page
+            assert item[2] < self._option_per_column
+            page = item[0] + 3
+            row = item[1]
+            col = len(self._options_list[page][row]) - 2
+            return self._options_list[page][row][col]
+
+        else:
+            raise ValueError("Iterable size 3 - 4")
+
+
+    def _check_width_options(self, str_option: str):
+        size_option = len(str_option)
+        if size_option <= self._character_per_option:
+            return (str_option
+                    + " "
+                    + self.space_character
+                    * (self._character_per_option - size_option))
+        else:
+            return (str_option[:self._option_cutoff_point]
+                    + self.character_overflow
+                    + " ")
+
+
+    def _set_scroll_bar(self):
+        # Set Scroll-Bar each pages values
+        rows_group = int((self._options_rows_per_page * 2 + 1)
+                         / self._number_pages)
+        module = (self._options_rows_per_page * 2 + 1) % self._number_pages
+
+        # Obtain the size of the rows groups by adding the surplus
+        n_rows_groups = [rows_group + 1 if page < module else rows_group
+                         for page in range(self._number_pages)]
+
+        # Rows per page where the Scroll-Bar is activating
+        scrollbar_groups = []
+        for i, n_rows in enumerate(n_rows_groups):
+            scrollbar_groups.append(tuple(range(
+                sum(n_rows_groups[: i]), sum(n_rows_groups[: i + 1])
+            )))
+
+        # Activating Scroll-Bar as appropriate
+        for i, y in enumerate(scrollbar_groups):
+            for x in y:
+                scroll_bar = self.scrollbar[True]
+                self.__setitem__([i, x, 0], scroll_bar)
+
+
+    def _options_list_processing(self, input_options_list: list[str]):
+        """
+        Process the ``input_options_list``, so that useful in class
+
+        This adds empty options to the input list for complete the menu,
+        adjusts the char width of the options
+        and changes the indexing of the list to fit the coordinate system this class.
+        """
+
+        def same_len_list_elements(input_list: list[str]):
+            """Fill the entire menu with options and adjust width them."""
+
+            adjusted_elements = input_list + [""] * (self._max_index - list_size)
+            adjusted_elements = list(
+                map(self._check_width_options, adjusted_elements)
+            )
+            return adjusted_elements
+
+
+        def add_cursor_to_option(input_list: list[str]):
+            """Create columns; Add cursor to options"""
+            cursor = self.cursor[False]
+            options_with_cursor: list[list[str] | str] = list(
+                map(lambda opt: [cursor, opt], input_list)
+            )
+            return options_with_cursor
+
+
+        def create_body_rows(input_list: list[str]):
+            rows_list: list[list[str] | str] = []
+
+            for ii in range(0, len(input_list), self._option_per_column):
+                # Add Row Options
+                row = input_list[ii: ii + self._option_per_column]
+                # Add BorderRow
+                row.insert(0, self.row_limit)
+                # Add ScrollBar
+                row.append(self.scrollbar[False])
+                # Add BorderRow
+                row.append(self.row_limit)
+                # Add Row to list
+                rows_list.append(row.copy())
+
+            return rows_list
+
+
+        def create_body_page(input_list: list[list[str] | str]):
+            pages_list = []
+            for i in range(0, len(input_list), self._options_rows_per_page):
+                page = []
+                options_row = input_list[i: i + self._options_rows_per_page]
+                [page.extend((self.empty_row.copy(), options_row)) for options_row in options_row]
+                page.append(self.empty_row.copy())
+
+                pages_list.append(page)
+
+            return pages_list
+
+        # Create title
+        title_menu = [self.limit_menu, self.title_row, self.separate_row]
+
+
+        # Create body Menu
+        list_size = len(input_options_list)
+
+        # Fill the entire menu with options and adjust width them.
+        body_menu = same_len_list_elements(input_options_list)
+
+        # Create columns; Add cursor to options
+        body_menu = add_cursor_to_option(body_menu)
+
+
+        # Structural change of list to approach the coord system.
+        body_menu = create_body_rows(body_menu)
+
+
+        # Create Pages
+        body_menu = create_body_page(body_menu)
+
+        return title_menu + body_menu + [self.limit_menu]
+
+
+    def show_frame_menu(self):
+        page = self._cursor_coordinates[0] + 3
+
+        show_menu = self._options_list[0: 3]
+        page_menu: list | tuple = self._options_list[page]
+
+        for i, row_menu in enumerate(page_menu):
+            if i % 2 == 0:
+                show_menu.append("".join(row_menu))
+            else:
+                r = ["".join(element) if type(element) == list else element  for element in row_menu]
+                show_menu.append("".join(r))
+
+        show_menu.append(self._options_list[-1])
+        print("\n".join(show_menu))
+
+
+    def control_menu(self, input_user: str):
         """
         Update coord with ``input_user``
 
@@ -330,6 +355,11 @@ class Menu:
              input_user : str
         """
 
+        # Move the cursor
+        # Initial position
+        after_coord = self._cursor_coordinates.copy()
+
+        # Set the maximum values that the coordinates must have
         limit_coord = [self._number_pages,
                        self._options_rows_per_page,
                        self._option_per_column]
@@ -339,7 +369,9 @@ class Menu:
         coord_x = 2
 
         # Obtain the coord value change
-        if input_user.upper() == MOVE_UP:
+        if input_user.upper() == OK_BUTTON:
+            return self.__getitem__(after_coord), after_coord
+        elif input_user.upper() == MOVE_UP:
             add_coord = (0, -1, 0)
         elif input_user.upper() == MOVE_DOWN:
             add_coord = (0, 1, 0)
@@ -348,54 +380,27 @@ class Menu:
         elif input_user.upper() == MOVE_RIGHT:
             add_coord = (0, 0, 1)
         else:
-            return
+            return ()
 
         # sum the last coord
-        self._cursor_coordinates = list(
-            map(lambda x, y: x + y, self._cursor_coordinates, add_coord)
+        last_coord = list(
+            map(lambda x, y: x + y, after_coord, add_coord)
         )
 
         # Refactor with the coord limit
-        self._cursor_coordinates[coord_x] %= limit_coord[coord_x]
+        last_coord[coord_x] %= limit_coord[coord_x]
 
-        if self._cursor_coordinates[coord_y] < 0 or self._cursor_coordinates[coord_y] >= limit_coord[coord_y]:
-            self._cursor_coordinates[coord_z] += add_coord[coord_y]
+        if last_coord[coord_y] < 0 or last_coord[coord_y] >= limit_coord[coord_y]:
+            last_coord[coord_z] += add_coord[coord_y]
 
-        self._cursor_coordinates[coord_y] %= limit_coord[coord_y]
-        self._cursor_coordinates[coord_z] %= limit_coord[coord_z]
-
-
-    def _column_object_index(self, mode="option"):
-        """
-        You access to element into the column, selected by coord number.
-
-        Parameters:
-            mode : str, default="option"
-
-        Return:
-            int
-                this is the column index of the menu.
-
-        Examples:
-            - ``mode="cursor"``: Return index `Cursor` selected by coord number.
-            - ``mode="option"``: Return index `Option` selected by coord number.
-            - ``mode="ScrollBar"``: Return index `ScrollBar in the row.
-        """
-
-        match mode:
-            case "cursor": return 2 * (self._cursor_coordinates[2] + 1) - 1
-            case "option": return 2 * (self._cursor_coordinates[2] + 1)
-            case "ScrollBar": return 2 * self._option_per_column + 1
-            case _:
-                example_doc = self._column_object_index.__doc__
-                example_doc = example_doc[example_doc.find("Examples") - 1:]
-                raise ValueError("You select a valid mode." + "\n" +  example_doc)
+        last_coord[coord_y] %= limit_coord[coord_y]
+        last_coord[coord_z] %= limit_coord[coord_z]
 
 
-    def select_option(self):
-        """Return the coord and the name of the option"""
+        # Change menu values
+        self._cursor_coordinates = last_coord
 
-        coord_page = self._cursor_coordinates[0]
-        coord_row = self._cursor_coordinates[1]
-        return self._cursor_coordinates, self._options_list[coord_page][coord_row][self._column_object_index()]
+        self.__setitem__(after_coord + [0], self.cursor[False])
+        self.__setitem__(last_coord + [0], self.cursor[True])
 
+        return ()
