@@ -15,7 +15,7 @@ def main():
     #test_menu.show_frame_menu()
     #test_menu._cursor_coordinates = [2, 0, 0]
     #test_menu.show_frame_menu()
-
+    test_menu[[5, 0, 0]] = "a"
 
     while True:
         input_u = input("...")
