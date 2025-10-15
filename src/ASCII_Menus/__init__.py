@@ -52,27 +52,6 @@ MOVE_RIGHT = "D"
 class Menu:
     """
     Class that provides methods for creating and interacting with the menu.
-
-    Attributes:
-        _type_menu : bool
-                    If you'd want a menu dynamic (True) or static (False)
-        activated : bool
-                    Allows interaction with the menu when True.
-        _title_menu : str
-        _cursor_coordinates : list[int, int, int]
-                             It saves the cursor position.
-        _option_per_column : int
-        _options_rows_per_page : int
-        _character_per_option : int
-        _number_pages : int
-        _max_index : int
-                    The maximum options number that complete the menu.
-        _characters_per_row : int
-                             Rows size in char number.
-        _option_cutoff_point : int
-                              Cutoff point of an option exceeds the maximum char number.
-        _options_list : list[str]
-                       Post-processed list of an input list.
     """
 
 
@@ -92,21 +71,6 @@ class Menu:
             dynamic_static_menu : bool, default=True
         """
 
-        # Verifications
-        assert option_per_column > 0, "option_per_column must be greater than 0"
-        assert rows_per_page > 0, "rows_per_page must be greater than 0"
-        assert character_per_option > len(DEFAULT_CHARACTERS["CharacterOverflow"]), (
-            "character_per_option must be greater than {}"
-            .format(len(DEFAULT_CHARACTERS["CharacterOverflow"])))
-
-        assert options_list != [], "The list cannot be empty"
-
-
-        # Menu main features
-        self._type_menu = dynamic_static_menu
-        self.activated: bool = True
-        self._title_menu = title_menu
-        self._cursor_coordinates: list[int] = [0, 0, 0]
 
         # Set default character
         self.cursor = DEFAULT_CHARACTERS["cursor_values"]
@@ -117,6 +81,13 @@ class Menu:
         self.menu_corner = DEFAULT_CHARACTERS["MenuCorner"]
         self.character_overflow = DEFAULT_CHARACTERS["CharacterOverflow"]
         self.space_character = DEFAULT_CHARACTERS["SpaceCharacter"]
+
+
+        # Menu main features
+        self._type_menu = dynamic_static_menu
+        self.activated: bool = True
+        self._title_menu = title_menu
+        self._cursor_coordinates: list[int] = [0, 0, 0]
 
         # Menu structure
         self._option_per_column = option_per_column
@@ -151,6 +122,30 @@ class Menu:
             self.scrollbar[False],
             self.row_limit
         ]
+
+        # Check input parameters
+        if not options_list:
+            raise ValueError(
+                "The param options_list cannot be empty list")
+        if self._option_per_column <= 0:
+            raise ValueError(
+                "The param option_per_column must be greater than 0")
+        if self._options_rows_per_page <= 0:
+            raise ValueError(
+                "The param rows_per_page must be greater than 0")
+        if self._character_per_option <= len(self.character_overflow):
+            raise ValueError(
+                "The param character_per_option must be greater than {}"
+                .format(len(self.character_overflow)))
+        # Minimum number of rows so that the scroll bar has enough space
+        if self._options_rows_per_page * 2 + 1 < self._number_pages:
+            raise ValueError(
+                "The param rows_per_page must be greater than {} with option_per_column value ({})"
+                .format(ceil(self._max_index
+                             / (self._option_per_column * 4)
+                             - 1),
+                        self._option_per_column)
+            )
 
 
         # Generate menu
