@@ -29,25 +29,25 @@ from ASCII_Menus import Menu
 
 test_menu = Menu("test_menu", 3, 4, 5,
                  [
-                     "test", ":", "menu",
-                     "test", ":", "menu",
-                     "test", ":", "menu",
-                     "test", ":", "menu",
+                     "test", "....", "menu",
+                     "test", "....", "menu",
+                     "test", "....", "menu",
+                     "test", "....", "menu",
                  ])
-test_menu.menu_crafter()
+test_menu.show_frame_menu()
 ```
 ```
 +-------------------------+
 |        test_menu        |
 |-------------------------|
 |                         |
-| > test    :       menu  |
+| > test    ....    menu  |
 |                         |
-|   test    :       menu  |
+|   test    ....    menu  |
 |                         |
-|   test    :       menu  |
+|   test    ....    menu  |
 |                         |
-|   test    :       menu  |
+|   test    ....    menu  |
 +-------------------------+
 ```
 
@@ -57,20 +57,20 @@ test_menu.menu_crafter()
 ```python
 ...
 test_menu
-test_menu.menu_crafter()
+test_menu.show_frame_menu()
 ```
 ```
 +-------------------------+
 |        test_menu        |
 |-------------------------|
 |                         |
-|   test    :       menu  |
+| > test    ....    menu  |
 |                         |
-| > test    :       menu  |
+|   test    ....    menu  |
 |                         |
-|   test    :       menu  |
+|   test    ....    menu  |
 |                         |
-|   test    :       menu  |
+|   test    ....    menu  |
 +-------------------------+
 ```
 
@@ -80,13 +80,12 @@ test_menu.menu_crafter()
 ...
 input_user = input()
 
-if input_user.lower() == "q":
-    test_menu.select_option()
+test_menu.control_menu(input_user)
 ```
-Returns a tuple containing the cursor coordinates and the name option string.
+Returns a tuple containing the cursor coordinates and the name option string, if `input_user` == `OK_BUTTON`.
 
 ```
-([0, 1, 0], "test")
+("test", [0, 1, 0])
 ```
 
 
