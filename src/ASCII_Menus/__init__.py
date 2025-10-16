@@ -8,23 +8,23 @@ Example:
 
     >>> test_menu = Menu("test_menu", 3, 4, 5,
     ...                  [
-    ...                      "test", ":", "menu",
-    ...                      "test", ":", "menu",
-    ...                      "test", ":", "menu",
-    ...                      "test", ":", "menu",
+    ...                      "test", "....", "menu",
+    ...                      "test", "....", "menu",
+    ...                      "test", "....", "menu",
+    ...                      "test", "....", "menu",
     ...                  ])
     >>> test_menu.show_frame_menu()
     +-------------------------+
     |        test_menu        |
     |-------------------------|
     |                         |
-    | > test    :       menu  |
+    | > test    ....    menu  |
     |                         |
-    |   test    :       menu  |
+    |   test    ....    menu  |
     |                         |
-    |   test    :       menu  |
+    |   test    ....    menu  |
     |                         |
-    |   test    :       menu  |
+    |   test    ....    menu  |
     +-------------------------+
 """
 from math import ceil
@@ -94,6 +94,10 @@ class Menu:
 
 
         # Set default menu rows
+        if len(title_menu) > self._characters_per_row:
+            self._title_menu = (title_menu[:self._characters_per_row - len(self._character_overflow)]
+                                + self._character_overflow)
+
         self._title_row = (self._row_limit
                            + self._title_menu.center(self._characters_per_row)
                            + self._row_limit)
@@ -133,7 +137,6 @@ class Menu:
                              - 1),
                         self._option_per_column)
             )
-
 
         # Generate menu
         self._options_list = self._options_list_processing(options_list)
@@ -259,6 +262,7 @@ class Menu:
 
         def add_cursor_to_option(input_list: list[str]):
             """Create columns; Add cursor to options"""
+
             cursor = self._cursor[False]
             options_with_cursor: list[list[str] | str] = list(
                 map(lambda opt: [cursor, opt], input_list)
@@ -380,11 +384,14 @@ class Menu:
         )
 
         # Refactor with the coord limit
+        # Refactor column value
         last_coord[coord_x] %= limit_coord[coord_x]
 
+        # Change page
         if last_coord[coord_y] < 0 or last_coord[coord_y] >= limit_coord[coord_y]:
             last_coord[coord_z] += add_coord[coord_y]
 
+        # Refactor column and row values
         last_coord[coord_y] %= limit_coord[coord_y]
         last_coord[coord_z] %= limit_coord[coord_z]
 
