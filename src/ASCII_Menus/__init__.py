@@ -143,6 +143,9 @@ class Menu:
         self.__setitem__(self._cursor_coordinates + [0], self._cursor[True])
         self._set_scroll_bar()
 
+        # Relates menu coordinates to the name of the options for then enter functions.
+        self._functions_dictionary = self._create_functions_dictionary(options_list)
+
 
     def __setitem__(self, key, value):
         """Changes values into the rows that you want"""
@@ -321,7 +324,47 @@ class Menu:
         # Create Pages
         body_menu = create_body_page(body_menu)
 
+
         return title_menu + body_menu + [self._limit_menu]
+
+
+    def _create_functions_dictionary(self, input_options_list: list[str]):
+        a = 0
+        functions_dictionary = {}
+        page = 0
+        row = 0
+        col = 0
+
+        for i, option in enumerate(input_options_list):
+            functions_dictionary.update({(page, row, col): option})
+
+            col += 1
+
+            if col >= self._option_per_column:
+                col = 0
+                row += 1
+
+            if row >= self._options_rows_per_page:
+                row = 0
+                page += 1
+
+        return functions_dictionary
+
+
+    def _add_function_to_menu(self, *args: list[object], mode="p"):
+        if mode == "p":
+            options_coord_list = sorted(list(self._functions_dictionary.keys()))
+            list_functions = []
+            list_functions.extend(args)
+            i = 0
+
+            for arg in args[0]:
+                coord = options_coord_list[i]
+                self._functions_dictionary[coord] = (self._functions_dictionary[coord], arg)
+                i += 1
+
+
+
 
 
     def show_frame_menu(self):
