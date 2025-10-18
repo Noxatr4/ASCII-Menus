@@ -27,7 +27,11 @@ Example:
     |   test    ....    menu  |
     +-------------------------+
 """
+import os
+import string
 from math import ceil
+from collections.abc import Callable
+from pprint import pprint
 
 DEFAULT_CHARACTERS = {
     "cursor_values": ("   ", " > "),
@@ -351,17 +355,64 @@ class Menu:
         return functions_dictionary
 
 
-    def _add_function_to_menu(self, *args: list[object], mode="p"):
-        if mode == "p":
-            options_coord_list = sorted(list(self._functions_dictionary.keys()))
-            list_functions = []
-            list_functions.extend(args)
-            i = 0
+    def add_function_to_menu(self, functions_and_kwargs: list[tuple[Callable, dict]] | tuple[Callable, dict]):
+        def correct_key_functions_dictionary(key_in_str: str):
 
-            for arg in args[0]:
-                coord = options_coord_list[i]
-                self._functions_dictionary[coord] = (self._functions_dictionary[coord], arg)
-                i += 1
+            # Checks if a tuple with three elements was written
+            if not (key_in_str.count("(") == 1
+                    and key_in_str.count(")") == 1
+                    and key_in_str.count(",") == 2):
+                print("Incorrect format; The correct format is: <(int, int, int)>.\n\n")
+                return False
+
+            supr_chars = str.maketrans("", "", "() ")
+            key_in_str = key_in_str.translate(supr_chars)
+
+            # Checks if only int
+            for n in key_in_str.split(","):
+                for digit in n:
+                    if not digit in string.digits:
+                        print("The value of the entered coordinates can only be whole digits: <(int, int, int)>.\n\n")
+                        return False
+
+            key = tuple([int(coord) for coord in key_in_str.split(",")])
+
+            # Checks if the entered key is found as an existing coordinate within the menu
+            if key not in self._functions_dictionary.keys():
+                print("The coordinates entered as a key do not exist in the menu.\n\n")
+                return False
+
+            return True
+
+
+        if type(functions_and_kwargs) == list:
+            options_coord_list = sorted(list(self._functions_dictionary.keys()))
+            for i, option_key in enumerate(options_coord_list):
+                self._functions_dictionary[option_key] = {
+                    "option": self._functions_dictionary[option_key],
+                    "function": functions_and_kwargs[i][0],
+                    "kwargs": functions_and_kwargs[i][1]
+                }
+
+        elif type(functions_and_kwargs) == tuple:
+            pprint(self._functions_dictionary)
+            option_key = self._input_validator(
+                correct_key_functions_dictionary,
+                "Enter a dictionary key that corresponds to the option you want to add to the function.\n: "
+            )
+
+            option_key = self._convert_str_coord_to_tuple_coord(option_key)
+
+            self._functions_dictionary[option_key] = {
+                "option": self._functions_dictionary[option_key],
+                "function": functions_and_kwargs[0],
+                "kwargs": functions_and_kwargs[1]
+            }
+
+
+        else:
+            raise TypeError("Supports types are: list[tuple[Callable, dict]] | tuple[Callable, dict")
+
 
 
 
@@ -478,3 +529,24 @@ class Menu:
             )
 
         return None
+
+
+    @staticmethod
+    def _input_validator(validator: Callable[[str], bool], msg: str = ""):
+
+        entry_to_be_validated = input(msg)
+
+        while not validator(entry_to_be_validated):
+            entry_to_be_validated = input(msg)
+
+        return entry_to_be_validated
+
+
+    @staticmethod
+    def _convert_str_coord_to_tuple_coord(str_coord: str):
+        replace_chars = str.maketrans("", "", "()")
+
+        str_coord = str_coord.translate(replace_chars)
+        tuple_coord = tuple([int(n) for n in str_coord.split(",")])
+
+        return tuple_coord
