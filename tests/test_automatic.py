@@ -8,6 +8,36 @@ import random
 
 CHARACTER_MENU: DEFAULT_CHARACTERS = DEFAULT_CHARACTERS.copy()
 
+
+def parameter_generate():
+    # Generate random random_title for the menu
+    width_title = random.randrange(1, 100)
+    random_title = "".join(
+        [random.choice(string.ascii_letters) for i in range(width_title)]
+    )
+
+    # Generate random number for column
+    width_col = random.randrange(1, 18)
+
+    # Generate random number for rows
+    width_row = random.randrange(3, 50)
+
+    # Generate random number for character por options
+    n_char_options = random.randrange(1, 30)
+
+    # Generate random list for the menu
+    list_size = random.randrange(1, 1000)
+    test_option_list: list = []
+
+    for i in range(list_size):
+        width_option = random.randrange(1, 100)
+        option = "".join(
+            [random.choice(string.ascii_letters) for j in range(width_option)]
+        )
+        test_option_list.append(option)
+    return random_title, width_col, width_row, n_char_options, test_option_list
+
+
 class TestMenu(unittest.TestCase):
     """
     def test___init__(self):
@@ -157,36 +187,8 @@ class TestMenu(unittest.TestCase):
             self.assertTrue(bool(last_coord[coord_z] < TEST_MENU._number_pages), "{} < {}\n{} - {}".format(last_coord[coord_z], TEST_MENU._number_pages, input_user, last_coord))
     """
 
+    @unittest.skip
     def test___init__(self):
-        def parameter_generate():
-            # Generate random random_title for the menu
-            width_title = random.randrange(1, 100)
-            random_title = "".join(
-                [random.choice(string.ascii_letters) for i in range(width_title)]
-            )
-
-            # Generate random number for column
-            width_col = random.randrange(1, 18)
-
-            # Generate random number for rows
-            width_row = random.randrange(3, 50)
-
-            # Generate random number for character por options
-            n_char_options = random.randrange(1, 30)
-
-            # Generate random list for the menu
-            list_size = random.randrange(1, 1000)
-            test_option_list: list = []
-
-            for i in range(list_size):
-                width_option = random.randrange(1, 100)
-                option = "".join(
-                    [random.choice(string.ascii_letters) for j in range(width_option)]
-                )
-                test_option_list.append(option)
-            return random_title, width_col, width_row, n_char_options, test_option_list
-
-
         def generate_menu():
             title, n_col, n_row, n_charm, options_list = parameter_generate()
 
@@ -202,8 +204,12 @@ class TestMenu(unittest.TestCase):
         print("Finished")
 
 
+    def test_show_frame_menu(self):
+        test_menu = Menu(*parameter_generate())
 
-
+        for n in range(101):
+            print(test_menu.show_frame_menu())
+            #self.assertTrue(1 == 1)
 
 
 if __name__ == "__main__":
