@@ -27,11 +27,9 @@ Example:
     |   test    ....    menu  |
     +-------------------------+
 """
-import os
-import string
+
 from math import ceil
 from collections.abc import Callable
-from pprint import pprint
 
 DEFAULT_CHARACTERS = {
     "cursor_values": ("   ", " > "),
@@ -51,6 +49,7 @@ MOVE_UP = "W"
 MOVE_DOWN = "S"
 MOVE_LEFT = "A"
 MOVE_RIGHT = "D"
+
 
 
 class Menu:
@@ -73,35 +72,39 @@ class Menu:
         self._character_overflow = DEFAULT_CHARACTERS["CharacterOverflow"]
         self._space_character = DEFAULT_CHARACTERS["SpaceCharacter"]
 
+        # Menu structure
+        self._option_per_column = option_per_column
+        self._options_rows_per_page = rows_per_page
+        self._total_rows_body_menu = rows_per_page * 2 + 1
+        self._character_per_option = character_per_option
+        self._number_pages = ceil(
+            (len(options_list) / (option_per_column * rows_per_page))
+        )
+        self._max_index = option_per_column * rows_per_page * self._number_pages
+        self._characters_per_row = (
+                len(self._cursor[False]) * option_per_column
+                + character_per_option * option_per_column
+                # Spaces char before Scroll-Bar
+                + 2
+                # Width to Scroll-Bar
+                + 1
+        )
+        self._option_cutoff_point = (
+                character_per_option - len(self._character_overflow)
+        )
 
         # Menu main features
         self._type_menu = dynamic_static_menu
         self.activated: bool = True
-        self._title_menu = title_menu
-        self._cursor_coordinates: list[int] = [0, 0, 0]
-
-        # Menu structure
-        self._option_per_column = option_per_column
-        self._options_rows_per_page = rows_per_page
-        self._character_per_option = character_per_option
-        self._number_pages = ceil((len(options_list)
-                                  / (option_per_column * rows_per_page))
-                                 )
-        self._max_index = option_per_column * rows_per_page * self._number_pages
-        self._characters_per_row = (len(self._cursor[False])
-                                    * option_per_column
-                                    + (character_per_option + 1)
-                                    * option_per_column
-                                    + 1)
-        self._option_cutoff_point = (character_per_option
-                                     - len(self._character_overflow))
-
+        self._title_menu = self._fit_word_width(
+            title_menu,
+            self._characters_per_row,
+            self._character_overflow,
+            ""
+        )
+        self._cursor_coordinates: tuple[int, int, int] = (0, 0, 0)
 
         # Set default menu rows
-        if len(title_menu) > self._characters_per_row:
-            self._title_menu = (title_menu[:self._characters_per_row - len(self._character_overflow)]
-                                + self._character_overflow)
-
         self._title_row = (self._row_limit
                            + self._title_menu.center(self._characters_per_row)
                            + self._row_limit)
@@ -133,7 +136,7 @@ class Menu:
                 "The param character_per_option must be greater than {}"
                 .format(len(self._character_overflow)))
         # Minimum number of rows so that the scroll bar has enough space
-        if self._options_rows_per_page * 2 + 1 < self._number_pages:
+        if self._total_rows_body_menu < self._number_pages:
             raise ValueError(
                 "The param rows_per_page must be greater than {} with option_per_column value ({})"
                 .format(ceil(self._max_index
@@ -144,14 +147,16 @@ class Menu:
 
         # Generate menu
         self._options_list = self._options_list_processing(options_list)
-        self.__setitem__(self._cursor_coordinates + [0], self._cursor[True])
+
+        # noinspection PyTypeChecker
+        self.__setitem__((*self._cursor_coordinates, 0), self._cursor[True])
         self._set_scroll_bar()
 
         # Relates menu coordinates to the name of the options for then enter functions.
         self._functions_dictionary = self._create_functions_dictionary(options_list)
 
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: tuple[int, int, int, int] | tuple[int, int, int], value: str):
         """Changes values into the rows that you want"""
         size_item = len(key)
 
@@ -182,7 +187,7 @@ class Menu:
             raise ValueError("Iterable size 3 - 4: {};\n Param key = {}".format(size_item, key))
 
 
-    def __getitem__(self, item: tuple | list):
+    def __getitem__(self, item: tuple[int, int, int, int] | tuple[int, int, int]):
         """Return value into the rows that you want"""
 
         size_item = len(item)
@@ -211,24 +216,11 @@ class Menu:
             raise ValueError("Iterable size 3 - 4")
 
 
-    def _check_width_options(self, str_option: str):
-        size_option = len(str_option)
-        if size_option <= self._character_per_option:
-            return (str_option
-                    + " "
-                    + self._space_character
-                    * (self._character_per_option - size_option))
-        else:
-            return (str_option[:self._option_cutoff_point]
-                    + self._character_overflow
-                    + " ")
-
-
     def _set_scroll_bar(self):
         # Set Scroll-Bar each pages values
-        rows_group = int((self._options_rows_per_page * 2 + 1)
+        rows_group = int(self._total_rows_body_menu
                          / self._number_pages)
-        module = (self._options_rows_per_page * 2 + 1) % self._number_pages
+        module = self._total_rows_body_menu % self._number_pages
 
         # Obtain the size of the rows groups by adding the surplus
         n_rows_groups = [rows_group + 1 if page < module else rows_group
@@ -237,15 +229,18 @@ class Menu:
         # Rows per page where the Scroll-Bar is activating
         scrollbar_groups = []
         for i, n_rows in enumerate(n_rows_groups):
-            scrollbar_groups.append(tuple(range(
-                sum(n_rows_groups[: i]), sum(n_rows_groups[: i + 1])
-            )))
+            scrollbar_groups.append(tuple(
+                # The range of rows that the scroll-bar will be active
+                range(
+                    sum(n_rows_groups[: i]), sum(n_rows_groups[: i + 1])
+                )
+            ))
 
-        # Activating Scroll-Bar as appropriate
-        for i, y in enumerate(scrollbar_groups):
-            for x in y:
+        # Activating Scroll-Bar as appropriate page
+        for page, sb_active in enumerate(scrollbar_groups):
+            for row in sb_active:
                 scroll_bar = self._scrollbar[True]
-                self.__setitem__([i, x, 0], scroll_bar)
+                self.__setitem__((page, row, 0), scroll_bar)
 
 
     def _options_list_processing(self, input_options_list: list[str]):
@@ -262,7 +257,13 @@ class Menu:
 
             adjusted_elements = input_list + [""] * (self._max_index - list_size)
             adjusted_elements = list(
-                map(self._check_width_options, adjusted_elements)
+                map(
+                    lambda option: self._fit_word_width(option,
+                                                        self._character_per_option,
+                                                        self._character_overflow,
+                                                        self._space_character),
+                    adjusted_elements
+                )
             )
             return adjusted_elements
 
@@ -282,7 +283,7 @@ class Menu:
 
             for ii in range(0, len(input_list), self._option_per_column):
                 # Add Row Options
-                row = input_list[ii: ii + self._option_per_column]
+                row = input_list[ii: ii + self._option_per_column] + ["  "]
                 # Add BorderRow
                 row.insert(0, self._row_limit)
                 # Add ScrollBar
@@ -333,17 +334,17 @@ class Menu:
 
 
     def _create_functions_dictionary(self, input_options_list: list[str]):
-        a = 0
         functions_dictionary = {}
         page = 0
         row = 0
         col = 0
 
         for i, option in enumerate(input_options_list):
+            # Add the option to the dictionary and its coordinate as a key
             functions_dictionary.update({(page, row, col): option})
 
+            # Adjusts the indexes for menu coord system
             col += 1
-
             if col >= self._option_per_column:
                 col = 0
                 row += 1
@@ -355,75 +356,67 @@ class Menu:
         return functions_dictionary
 
 
-    def add_function_to_menu(self, functions_and_kwargs: list[tuple[Callable, dict]] | tuple[Callable, dict]):
-        def correct_key_functions_dictionary(key_in_str: str):
+    def add_function_to_menu(self, functions_and_kwargs: list[tuple[Callable, dict]] | tuple[tuple[int, int, int], Callable, dict]):
+        """
+        To call a function you want when **OK_BUTTON** is pressed
 
-            # Checks if a tuple with three elements was written
-            if not (key_in_str.count("(") == 1
-                    and key_in_str.count(")") == 1
-                    and key_in_str.count(",") == 2):
-                print("Incorrect format; The correct format is: <(int, int, int)>.\n\n")
-                return False
+        To fill all the options with functions, use the list structure: 'list[tuple[Callable, dict]]';
+        Where each option corresponds to a tuples into the list. The first tuple element represents
+        the `Function`, the second the `**kwargs` corresponding to it.
 
-            supr_chars = str.maketrans("", "", "() ")
-            key_in_str = key_in_str.translate(supr_chars)
+        To selectively fill only some of the options with functions,
+        use the tuple structure: tuple[tuple[int, int, int], Callable, dict]';
+        Where the first element represents the `option's coord`, the second
+        the `Function`, and the third the `**kwargs` corresponding to it.
 
-            # Checks if only int
-            for n in key_in_str.split(","):
-                for digit in n:
-                    if not digit in string.digits:
-                        print("The value of the entered coordinates can only be whole digits: <(int, int, int)>.\n\n")
-                        return False
+        """
 
-            key = tuple([int(coord) for coord in key_in_str.split(",")])
-
-            # Checks if the entered key is found as an existing coordinate within the menu
-            if key not in self._functions_dictionary.keys():
-                print("The coordinates entered as a key do not exist in the menu.\n\n")
-                return False
-
-            return True
-
-
+        # This is to insert functions on all the options.
         if type(functions_and_kwargs) == list:
-            options_coord_list = sorted(list(self._functions_dictionary.keys()))
+            # Checks if all options do have an associated function
+            len_functions_and_kwargs = len(functions_and_kwargs)
+            len_functions_dictionary = len(self._functions_dictionary)
+            if not len_functions_and_kwargs == len_functions_dictionary:
+                raise ValueError("The number of functions must be equal to the number of available options ({} to {})."
+                                 .format(len_functions_and_kwargs, len_functions_dictionary))
+
+            # Insert the options in order, from the first option to the last.
+            options_coord_list = sorted(  list(self._functions_dictionary.keys())  )
             for i, option_key in enumerate(options_coord_list):
+                option_function = functions_and_kwargs[i][0]
+                option_kwargs = functions_and_kwargs[i][1]
+
                 self._functions_dictionary[option_key] = {
                     "option": self._functions_dictionary[option_key],
-                    "function": functions_and_kwargs[i][0],
-                    "kwargs": functions_and_kwargs[i][1]
+                    "function": option_function,
+                    "kwargs": option_kwargs
                 }
 
+        # This is to insert functions on the option.
         elif type(functions_and_kwargs) == tuple:
-            pprint(self._functions_dictionary)
-            option_key = self._input_validator(
-                correct_key_functions_dictionary,
-                "Enter a dictionary key that corresponds to the option you want to add to the function.\n: "
-            )
-
-            option_key = self._convert_str_coord_to_tuple_coord(option_key)
+            option_key = functions_and_kwargs[0]
+            option_function = functions_and_kwargs[1]
+            option_kwargs = functions_and_kwargs[2]
 
             self._functions_dictionary[option_key] = {
                 "option": self._functions_dictionary[option_key],
-                "function": functions_and_kwargs[0],
-                "kwargs": functions_and_kwargs[1]
+                "function": option_function,
+                "kwargs": option_kwargs
             }
+
+
 
 
         else:
             raise TypeError("Supports types are: list[tuple[Callable, dict]] | tuple[Callable, dict")
 
 
-
-
-
-
     def show_frame_menu(self):
         """Print the menu"""
 
-        page = self._cursor_coordinates[0] + 3
-
         show_menu = self._options_list[0: 3]
+
+        page = self._cursor_coordinates[0] + 3
         page_menu: list | tuple = self._options_list[page]
 
         for i, row_menu in enumerate(page_menu):
@@ -445,22 +438,32 @@ class Menu:
              input_user : str
         """
 
-        # Move the cursor
-        # Initial position
-        after_coord = self._cursor_coordinates.copy()
-
-        # Set the maximum values that the coordinates must have
-        limit_coord = [self._number_pages,
-                       self._options_rows_per_page,
-                       self._option_per_column]
-
         coord_z = 0
         coord_y = 1
         coord_x = 2
 
+        # Move the cursor
+        # Initial position
+        after_coord = self._cursor_coordinates
+
+        # Set the maximum values that the coordinates must have
+        limit_coord = (self._number_pages,
+                       self._options_rows_per_page,
+                       self._option_per_column)
+
         # Obtain the coord value change
         if input_user.upper() == OK_BUTTON:
-            return self.__getitem__(after_coord), after_coord
+            if after_coord in self._functions_dictionary:
+                name_option = self._functions_dictionary[after_coord]["option"]
+                call_function = self._functions_dictionary[after_coord]["function"]
+                kwargs = self._functions_dictionary[after_coord]["kwargs"]
+
+                call_function(**kwargs)
+                return name_option
+
+            else:
+                return ""
+
         elif input_user.upper() == MOVE_UP:
             add_coord = (0, -1, 0)
         elif input_user.upper() == MOVE_DOWN:
@@ -470,7 +473,7 @@ class Menu:
         elif input_user.upper() == MOVE_RIGHT:
             add_coord = (0, 0, 1)
         else:
-            return ()
+            return ""
 
         # sum the last coord
         last_coord = list(
@@ -491,12 +494,15 @@ class Menu:
 
 
         # Change menu values
-        self._cursor_coordinates = last_coord
+        self._cursor_coordinates = tuple(last_coord)
 
-        self.__setitem__(after_coord + [0], self._cursor[False])
-        self.__setitem__(last_coord + [0], self._cursor[True])
+        # noinspection PyTypeChecker
+        self.__setitem__((*after_coord, 0), self._cursor[False])
 
-        return ()
+        # noinspection PyTypeChecker
+        self.__setitem__((*last_coord, 0), self._cursor[True])
+
+        return ""
 
 
     def _indexes_error(self, input_indexes: list | tuple):
@@ -517,7 +523,7 @@ class Menu:
                     input_indexes)
             )
 
-        within_row_lt = bool(input_indexes[1] >= self._options_rows_per_page * 2 + 1)
+        within_row_lt = bool(input_indexes[1] >= self._total_rows_body_menu)
         if size_index == 3 and (within_page_lt or within_row_lt or within_col_lt):
             raise IndexError(
                 "The max value for input index: {}\n"
@@ -550,3 +556,13 @@ class Menu:
         tuple_coord = tuple([int(n) for n in str_coord.split(",")])
 
         return tuple_coord
+
+
+    @staticmethod
+    def _fit_word_width(word: str, width_requested: int, tail_char: str, char_fill: str):
+        if len(word) > width_requested:
+            return word[:width_requested - len(tail_char)] + tail_char
+        elif len(word) < width_requested:
+            return word + char_fill * (width_requested - len(word))
+        else:
+            return word
