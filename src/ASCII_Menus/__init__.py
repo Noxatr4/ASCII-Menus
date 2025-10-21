@@ -31,6 +31,8 @@ Example:
 from math import ceil
 from collections.abc import Callable
 
+__version__ = "1.0.0"
+
 DEFAULT_CHARACTERS = {
     "cursor_values": ("   ", " > "),
     "BodyEmptyRow": " ",
@@ -453,12 +455,21 @@ class Menu:
 
         # Obtain the coord value change
         if input_user.upper() == OK_BUTTON:
-            if after_coord in self._functions_dictionary:
+            # If the coord exist and the option has a functions
+            if (after_coord in self._functions_dictionary
+                and type(self._functions_dictionary[after_coord]) == dict):
+
                 name_option = self._functions_dictionary[after_coord]["option"]
                 call_function = self._functions_dictionary[after_coord]["function"]
                 kwargs = self._functions_dictionary[after_coord]["kwargs"]
 
                 call_function(**kwargs)
+                return name_option
+
+            # If only the coord exist
+            elif after_coord in self._functions_dictionary:
+                name_option = self._functions_dictionary[after_coord]
+
                 return name_option
 
             else:
